@@ -1,26 +1,28 @@
 package com.example.nikola.controller;
 
 import com.example.nikola.model.User;
-import com.example.nikola.repository.PostgresRepository;
+import com.example.nikola.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
 public class MyController {
-
+    UserRepository userRepository;
     @Autowired
-    PostgresRepository postgresRepository;
+    public MyController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @GetMapping("/getusers")
     public ResponseEntity<List<User>> getAllUsers() {
-
-        List<User> users = postgresRepository.findAll();
+        List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -28,45 +30,60 @@ public class MyController {
     }
 
     @GetMapping("/getusers/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Long id) {
-
-        try {
-            User user = postgresRepository.findById(id).orElse(null);
+    public ResponseEntity<?> getUser(@PathVariable Long id) {
+            Optional<User> user = userRepository.findById(id);
             return new ResponseEntity<>(user, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
     }
 
-    @PostMapping("/adduser/{name}")
-    public ResponseEntity<User> addUser(@PathVariable("name") String name) {
-
-        User user = new User();
-        if ( postgresRepository.findByName(name) != null ) {
+    @PostMapping("/adduser")
+    public ResponseEntity<User> addUser(@RequestBody User user) {
+        String userName = user.getName();
+        if (userRepository.existsByName(userName)) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+        if ( (userName == null) || (userName.length() == 0) ) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } else {
-            user.setName(name);
-            user.setState("CREATED");
-            User saveUser = postgresRepository.save(user);
-            return new ResponseEntity<>(saveUser, HttpStatus.CREATED);
+            try {
+                user.setName(userName);
+                user.setState("CREATED");
+                User saveUser = userRepository.save(user);
+                return new ResponseEntity<>(saveUser, HttpStatus.CREATED);
+            } catch (Exception e) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         }
     }
 
     @DeleteMapping("/deleteuser/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable("id") Long id) {
-
-        Optional<User> user = postgresRepository.findById(id);
-        postgresRepository.delete(user.get());
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {
+        if ( id == null || !userRepository.existsById(id)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } else {
+            try {
+                Optional<User> optionalUser = userRepository.findById(id);
+                userRepository.delete(optionalUser.get());
+                return new ResponseEntity<>(HttpStatus.OK);
+            } catch (Exception e) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
     @PutMapping("/updateuser/{id}")
     public ResponseEntity<?> updateUser(@PathVariable("id") Long id) {
-
-        User user = postgresRepository.findById(id).orElse(null);
-        user.setState("UPDATED");
-        postgresRepository.save(user);
-        return new ResponseEntity<>(HttpStatus.OK);
+        if (id == null || !userRepository.existsById(id)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } else {
+            try {
+                User user = userRepository.findById(id).orElse(null);
+                Objects.requireNonNull(user).setState("UPDATED");
+                userRepository.save(user);
+                return new ResponseEntity<>(HttpStatus.OK);
+            } catch (Exception e) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
 }
