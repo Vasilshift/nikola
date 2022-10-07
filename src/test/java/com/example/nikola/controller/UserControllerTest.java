@@ -1,21 +1,23 @@
 package com.example.nikola.controller;
 
 import com.example.nikola.model.User;
-import com.example.nikola.service.UserServiceImpl;
+import com.example.nikola.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.mockito.ArgumentMatchers;
-import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+
 import java.util.ArrayList;
 import java.util.List;
+import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.mockito.BDDMockito.*;
@@ -29,17 +31,18 @@ public  class UserControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private UserServiceImpl userServiceImpl;
+    private UserService userService;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    User user1 = new User("John");
-    User user2 = new User("Sasha");
+    User user1;
+    User user2;
 
     @BeforeEach
     void setUp() {
-
+        user1 = new User(1L, "John", "CREATED");
+        user2 = new User(2L, "Sasha", "CREATED");
     }
 
     @Test
@@ -47,39 +50,60 @@ public  class UserControllerTest {
         List<User> listUsers = new ArrayList<>();
         listUsers.add(user1);
         listUsers.add(user2);
-        UserServiceImpl mock = org.mockito.Mockito.mock(UserServiceImpl.class);
-        when(mock.getAllUsers()).thenReturn(listUsers);
-        ResultActions response = mockMvc.perform(get("/api/v1/getusers"));
-        response.andExpect(status().is2xxSuccessful())
-                .andDo(print());
+
+        given(userService.getAllUsers()).willReturn(listUsers);
+
+        mockMvc.perform(get("/api/v1/users"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()",
+                        is(listUsers.size())));
     }
 
     @Test
-    public void givenUser_whenCreateUser_thenReturnSaveUser() throws Exception {
-        BDDMockito.given(userServiceImpl.saveUser(ArgumentMatchers.any(User.class)))
+    void givenUser_whenCreateUser_thenReturnSavedUser() throws Exception {
+        given(userService.createNewUser(ArgumentMatchers.any(User.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
-        ResultActions perform = mockMvc.perform(post("/api/v1/adduser")
+
+        ResultActions actions = mockMvc.perform(post("/api/v1/users")
                 .contentType("application/json")
                 .content(objectMapper.writeValueAsString(user1)));
-        perform.andExpect(status().is2xxSuccessful())
+
+        actions.andDo(print())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name",
                         CoreMatchers.is(user1.getName())));
     }
 
     @Test
     void givenUserId_whenGetUser_thenReturnUser() throws Exception {
-        userServiceImpl.saveUser(user1);
         Long userId = user1.getId();
-        when(userServiceImpl.getUser(userId)).thenReturn(user1);
-        ResultActions perform = mockMvc.perform(get("/api/v1/getusers/{id}", userId));
-        perform.andExpect(status().is2xxSuccessful());
+        when(userService.getUser(userId)).thenReturn(user1);
+        ResultActions perform = mockMvc.perform(get("/api/v1/users/{id}", userId));
+        perform.andExpect(status().isOk());
     }
 
     @Test
-    void deleteUser() {
+    void givenUserId_whenDeleteUser_then_Return200() throws Exception {
+        Long userId = user1.getId();
+        willDoNothing().given(userService).deleteUser(userId);
+        ResultActions response = mockMvc.perform(delete("/api/v1/users/{id}", userId));
+        response.andExpect(status().isMovedPermanently())
+                .andDo(print());
     }
 
     @Test
-    void givenUserId_whenUserUpdate_thenUserChangeStatus() {
+    void givenUserId_whenUserUpdate_thenUserChangeStatus() throws Exception {
+        Long userId = user1.getId();
+        user1.setState("UPDATED");
+
+        given(userService.getUser(userId)).willReturn(user1);
+
+        ResultActions response = mockMvc.perform(put("/api/v1/users/{id}", userId)
+               .contentType("application/json")
+               .content(objectMapper.writeValueAsString(user1)));
+
+        response.andExpect(status().isOk())
+                .andDo(print());
     }
 }

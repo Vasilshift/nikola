@@ -1,7 +1,7 @@
 package com.example.nikola.controller;
 
 import com.example.nikola.model.User;
-import com.example.nikola.service.UserServiceImpl;
+import com.example.nikola.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,38 +9,35 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1")
 public class UserController {
-    private final UserServiceImpl userServiceImpl;
-    public UserController(UserServiceImpl userServiceImpl) {
-        this.userServiceImpl = userServiceImpl;
+    private final UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @GetMapping("/getusers")
+    @GetMapping("/users")
     public ResponseEntity<?> getAllUsers() {
-        return new ResponseEntity<>(userServiceImpl.getAllUsers(), HttpStatus.OK);
+        return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
     }
 
-    @GetMapping("/getusers/{id}")
-    public ResponseEntity<?> getUser(@PathVariable Long id) {
-        Object user = userServiceImpl.getUser(id);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> getUser(@PathVariable("id")  Long id) {
+        return new ResponseEntity<>(userService.getUser(id), HttpStatus.OK);
     }
 
-    @PostMapping("/adduser")
+    @PostMapping("/users")
     public ResponseEntity<?> addUser(@RequestBody User user) {
-        Object saveUser = userServiceImpl.saveUser(user);
-        return new ResponseEntity<>(saveUser, HttpStatus.OK);
+        return new ResponseEntity<>(userService.createNewUser(user), HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/deleteuser/{id}")
+    @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {
-        Object deleteUser = userServiceImpl.deleteUser(id);
-        return new ResponseEntity<>(deleteUser, HttpStatus.OK);
-
+        userService.deleteUser(id);
+        return new ResponseEntity<>("REMOVED", HttpStatus.MOVED_PERMANENTLY);
     }
 
-    @PutMapping("/updateuser/{id}")
+    @PutMapping("/users/{id}")
     public ResponseEntity<?> updateUser(@PathVariable("id") Long id) {
-        Object saveUser = userServiceImpl.updateUser(id);
+        Object saveUser = userService.updateUser(id);
         return new ResponseEntity<>(saveUser, HttpStatus.OK);
 
     }
