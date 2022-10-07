@@ -1,5 +1,7 @@
 package com.example.nikola.exception;
 
+import java.util.Optional;
+
 public class MyException extends Throwable {
     private final String message;
 
