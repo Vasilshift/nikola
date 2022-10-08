@@ -5,7 +5,6 @@ import com.example.nikola.model.User;
 import com.example.nikola.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -34,10 +33,16 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void deleteUser(Long id) {
-        Optional<User> user = userRepository.findById(id);
-        user.ifPresent(userRepository::delete);
-
+    public Object deleteUser(Long id) {
+        User user = userRepository.findById(id).orElse(null);
+        if (user != null) {
+            user.setState("DELETED");
+            User deletedUser = new User(user.getId(), user.getName(), user.getState());
+            userRepository.deleteById(id);
+            return deletedUser;
+        } else {
+            return new MyException("User does not exist").getMessage();
+        }
     }
 
     public Object getUser(Long id) {

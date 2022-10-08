@@ -36,8 +36,8 @@ public  class UserControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    User user1;
-    User user2;
+    private User user1;
+    private User user2;
 
     @BeforeEach
     void setUp() {
@@ -78,16 +78,21 @@ public  class UserControllerTest {
     @Test
     void givenUserId_whenGetUser_thenReturnUser() throws Exception {
         Long userId = user1.getId();
+
         when(userService.getUser(userId)).thenReturn(user1);
+
         ResultActions perform = mockMvc.perform(get("/api/v1/users/{id}", userId));
+
         perform.andExpect(status().isOk());
     }
 
     @Test
-    void givenUserId_whenDeleteUser_then_Return200() throws Exception {
+    void givenUserId_whenDeleteUser_thenReturn200() throws Exception {
         Long userId = user1.getId();
-        willDoNothing().given(userService).deleteUser(userId);
+        user1.setState("DELETED");
+
         ResultActions response = mockMvc.perform(delete("/api/v1/users/{id}", userId));
+
         response.andExpect(status().isMovedPermanently())
                 .andDo(print());
     }
