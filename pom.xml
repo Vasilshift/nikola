@@ -10,6 +10,7 @@
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>nikola</artifactId>
+	<packaging>jar</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>nikola</name>
 	<description>Demo project for Spring Boot</description>
@@ -74,14 +75,7 @@
 					<target>11</target>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>3.0.0</version>
-				<configuration>
-					<mainClass>com.example.nikola</mainClass>
-				</configuration>
-			</plugin>
+
 		</plugins>
 	</build>
 
