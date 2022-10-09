@@ -100,7 +100,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<mainClass>src.main.java.com.example.nikola</mainClass>
+					<mainClass>com.example.nikola</mainClass>
 				</configuration>
 			</plugin>
 
